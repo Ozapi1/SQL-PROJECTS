@@ -30,3 +30,24 @@ FROM CovidDeaths
 where location is not null
 GROUP BY location
 ORDER BY TOTALdeaths desc
+
+WITH POPVCVAC (continent,location,date,population,new_vaccinations, TotalVAC)
+AS
+(
+SELECT cod.continent, cod.location,cod.date,cod.population,cov.new_vaccinations
+,SUM(CAST(cov.new_vaccinations AS int)) OVER (PARTITION BY cod.location) AS TotalVAC
+FROM CovidDeaths as cod
+JOIN CovidVaccine as  cov
+  ON cod.location=cov.location
+  and cod.date = cov.date
+  where cod.continent is not null
+)
+SELECT *
+FROM POPVCVAC
+
+CREATE VIEW HIF AS
+SELECT continent,location,population,MAX(total_cases) AS HIGHESTINFECTED,MAX(CAST((CAST(total_deaths AS int))/(population) AS DECIMAL(10,5))*100) PopulationDeaths
+FROM CovidDeaths
+WHERE continent IS NOT NULL
+GROUP BY continent,population,location
+--ORDER BY HIGHESTINFECTED DESC
